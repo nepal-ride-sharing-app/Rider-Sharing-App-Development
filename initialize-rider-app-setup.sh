@@ -66,7 +66,7 @@ handle_cloning() {
 print_results() {
   local results=("$@")
   echo -e "\nResults:"
-  printf "%-25s\t%-15s\t%-15s\t%-15s\n" "Repository" "[Cloning]" "[].env.local]" "[npm install (managed on Dockerfile or Docker Compose)]"
+  printf "%-25s\t%-15s\t%-15s\t%-15s\n" "Repository" "[Cloning]" "[].env.developmnet]" "[npm install]"
   for result in "${results[@]}"; do
     IFS='|' read -r repo clone_result env_result npm_result <<< "$result"
     printf "%-25s\t%-15s\t%-15s\t%-15s\n" "$repo" "[$clone_result]" "[$env_result]" "[$npm_result]"
@@ -109,13 +109,13 @@ for repo in "${MOBILE_APP_REPOS[@]}"; do
   if [ -d "${repo}" ]; then
     cd ${repo}
     # uncomment the following lines if npm install is required
-    # if npm install; then
-    #   npm_result="${GREEN}Success${NC}"
-    # else
-    #   npm_result="${RED}Failed${NC}"
-    # fi
-    npm_result="${RED}npm install Not attempted${NC}"
-    if cp .env.template .env.local; then
+    npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
+    if npm install; then
+      npm_result="${GREEN}Success${NC}"
+    else
+      npm_result="${RED}Failed${NC}"
+    fi
+    if cp .env.template .env.development; then
       env_result="${GREEN}Success${NC}"
     else
       env_result="${RED}Failed${NC}"
@@ -167,8 +167,8 @@ for repo in "${SERVICES_REPOS[@]}"; do
     # else
     #   npm_result="${RED}Failed${NC}"
     # fi
-    npm_result="${RED}npm install Not attempted${NC}"
-    if cp env/.env.template env/.env.local; then
+    npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
+    if cp env/.env.template env/.env.development; then
       env_result="${GREEN}Success${NC}"
     else
       env_result="${RED}Failed${NC}"
