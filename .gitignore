@@ -1,0 +1,38 @@
+# Ignore everything
+*
+
+# Except .vscode directory
+!.vscode/
+!.vscode/*
+
+# Except .sh files
+!*.sh
+
+# Except README files
+!README.md
+!README.txt
+
+# Except LICENSE files
+!LICENSE.md
+!LICENSE.txt
+
+# Except .gitignore file
+!.gitignore
+
+# Except .gitattributes file
+!.gitattributes
+
+# Except .gitkeep file
+!.gitkeep
+
+# Except .gitmodules file
+!.gitmodules
+
+# Except .gitconfig file
+!.gitconfig
+
+# Except .gitignore_global file
+!.gitignore_global
+
+# Except .env.template file
+!.env.template

@@ -8,10 +8,17 @@ GITHUB_USERNAME="subash1999"
 MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
 SERVICES_REPOS=("driver-service" "rider-service" "google-maps-service" "matching-service" "notification-service")
 
+NODE_MAJOR_VERSION_REQUIRED=18
+
 # Colors for output
 GREEN=$(tput setaf 2)
 RED=$(tput setaf 1)
 NC=$(tput sgr0) # No Color
+
+# Initialize results array
+results=()
+action_results=()
+results+=("     |     |     |     ")
 
 # Function to clone a repository
 clone_repo() {
@@ -62,19 +69,154 @@ handle_cloning() {
   done
 }
 
+# Function to copy .serverless folder to service directories
+copy_serverless_folder() {
+  for service in "${SERVICES_REPOS[@]}"; do
+    if [ -d "./services/$service" ]; then
+      cp -r ./.serverless "./services/$service/.serverless"
+      echo "Copied .serverless folder to ./services/$service"
+      action_results+=("Copy .serverless to $service|action status->${GREEN}Success${NC}|NA|NA")
+    else
+      echo "Service directory ./services/$service does not exist."
+      action_results+=("Copy .serverless to $service|action status->${RED}Failed${NC}|NA|NA")
+    fi
+  done
+}
+
 # Function to print results
 print_results() {
   local results=("$@")
   echo -e "\nResults:"
-  printf "%-25s\t%-15s\t%-15s\t%-15s\n" "Repository" "[Cloning]" "[].env.developmnet]" "[npm install]"
+  printf "%-25s\t%-15s\t%-15s\t%-15s\n" "Repository/Action" "[Cloning/ Install/ Operation Status]" "[.env.developmnet]" "[npm install]"
   for result in "${results[@]}"; do
     IFS='|' read -r repo clone_result env_result npm_result <<< "$result"
-    printf "%-25s\t%-15s\t%-15s\t%-15s\n" "$repo" "[$clone_result]" "[$env_result]" "[$npm_result]"
+    printf "%-25s\t%-30s\t%-30s\t%-15s\n" "$repo" "[$clone_result]" "[$env_result]" "[$npm_result]"
   done
 }
 
-# Initialize results array
+print_prequisites(){
+  echo -e "\nPrerequisites:"
+  printf "%-25s\t%-20s\t%-15s\t%-15s\n" "Prerequisite" "Requirement" "Version" "Installation Link"
+  prerequisites_array=(
+    "Node.js|>= 18.0.0|https://nodejs.org/en/download/"
+    "npm|>= 6.0.0|https://nodejs.org/en/download/"
+    "git|>= 2.30.0|https://git-scm.com/downloads"
+    "Docker|>= 20.0.0|https://docs.docker.com/get-docker/"
+    "Docker Compose|>= 1.29.2|https://docs.docker.com/compose/install/"
+  )
+  for required in "${prerequisites_array[@]}"; do
+    IFS='|' read -r name version link <<< "$required"
+    printf "%-25s\t%-30s\t%-15s\t%-15s\n" "$name" "${RED}Required and Running${NC}" "$version" "$link"
+  done
+}
+
+echo "Initializing Rider App Setup..."
+echo "This script will help you setup the Rider App development environment."
+echo "Please make sure you have the following prerequisites installed:"
+print_prequisites
+echo "Press enter to continue..."
+read -p ""
+
+
+# Function to check prerequisites
+check_prerequisite() {
+  local command=$1
+  local name=$2
+  local url=$3
+
+  if ! command -v $command &> /dev/null; then
+    echo "$name is not installed or not in path. Please install $name to continue."
+    echo "Download $name from $url"
+    echo "Exiting..."
+    exit 1
+  else
+    echo "$name Check: ${GREEN}Success${NC}"
+    action_results+=("$name Check|Check Status->${GREEN}Pass${NC}|NA|NA")
+  fi
+}
+
+perform_prequsites_check() {
+  # Check Node.js
+  check_prerequisite "node" "Node.js" "https://nodejs.org/en/download/"
+
+  # Check Node.js version
+  NODE_VERSION=$(node -v)
+  NODE_MAJOR_VERSION=$(echo $NODE_VERSION | cut -d. -f1 | sed 's/[^0-9]*//g')
+  if [ $NODE_MAJOR_VERSION -lt $NODE_MAJOR_VERSION_REQUIRED ]; then
+    echo "Node version is less than 18. Please install Node.js version 18 or greater to continue."
+    echo "Download Node.js from https://nodejs.org/en/download/"
+    echo "Exiting..."
+    exit 1
+  else
+    echo "Node Version Check: ${GREEN}Success${NC}"
+    action_results+=("Node Version Check|Version Check->${GREEN}Success${NC}|NA|NA")
+  fi
+
+  # Check npm
+  check_prerequisite "npm" "npm" "https://nodejs.org/en/download/"
+
+  # Check git
+  check_prerequisite "git" "git" "https://git-scm.com/downloads"
+
+  # Check Docker
+  check_prerequisite "docker" "Docker" "https://docs.docker.com/get-docker/"
+
+  # Check Docker Compose
+  check_prerequisite "docker-compose" "Docker Compose" "https://docs.docker.com/compose/install/"
+
+  #awscli check
+  check_prerequisite "aws" "AWS CLI" "https://aws.amazon.com/cli/"
+
+  #check if docker is running
+  if ! docker info &> /dev/null; then
+    echo "Docker is not running. Please start Docker to continue."
+    echo "Exiting..."
+    exit 1
+  else
+    echo "Docker Running Check: ${GREEN}Success${NC}"
+    action_results+=("Docker Running Check|Running Check->${GREEN}Success${NC}|NA|NA")
+  fi
+}
+
+# Perform prerequisites check
+perform_prequsites_check
+
+# install serverless on the current folder
+npm install -g serverless
+action_results+=("Serverless Global Installation|Install Check->${GREEN}Success${NC}|NA|NA")
+
+# check the presense of .serverless folder after login
+if [ -d ".serverless" ]; then
+  echo "Serverless Login Check: ${GREEN}Success${NC}"
+  action_results+=("Serverless Login Check|${GREEN}Success${NC}|NA|NA")
+else
+  # login to serverless
+  serverless login
+  #wait for user to login to serverless
+  read -p "Press enter to continue"
+  if [ -d ".serverless" ]; then
+    echo "Serverless Login Check: ${GREEN}Success${NC}"
+    action_results+=("Serverless Login Check|${GREEN}Success${NC}|NA|NA")
+  else
+    echo "Serverless Login Check: ${RED}Failed${NC}"
+    action_results+=("Serverless Login Check|${RED}Failed${NC}|NA|NA")
+    echo "Please login to serverless and run the script again from current directory."
+    echo "Exiting..."
+    exit 1
+  fi
+fi
+# define action_results array to store the results of each action
+action_results=()
+#  store the results till now in action_results array
+action_results+=("${results[@]}")
+# clear the results array
 results=()
+
+# add some blank lines in results array to separate the sections
+results+=("     |     |     |     ")
+results+=("     |     |     |     ")
+results+=("     |     |     |     ")
+results+=("     |     |     |     ")
 
 # Step 1: Clone mobile app repositories
 for repo in "${MOBILE_APP_REPOS[@]}"; do
@@ -123,7 +265,7 @@ for repo in "${MOBILE_APP_REPOS[@]}"; do
     cd ..
   fi
 
-  results+=("${repo}|${clone_result}|${env_result}|${npm_result}")
+  results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
 done
 
 # Step 2: Create services folder
@@ -176,12 +318,37 @@ for repo in "${SERVICES_REPOS[@]}"; do
     cd ..
   fi
 
-  results+=("${repo}|${clone_result}|${env_result}|${npm_result}")
+  results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
 done
 
-# Step 4: Run docker compose in the current script location
-cd ..
-docker-compose up -d
 
-# Step 5: Print results
+cd ..
+
+#step 4: copy .serverless folder to service directories
+copy_serverless_folder
+
+# Step 5: Run docker compose in the current script location
+# copy .env.template to .env for docker-compose
+cp .env.template .env
+action_results+=("Copy .env.template to .env|Env Copy Res->${GREEN}Success${NC}|NA|NA")
+
+
+# ask user to update the .env file with their credentials and run docker-compose up -d --build command
+echo "Setup completed successfully."
+echo "************************"
+echo "****** IMPORTANT *******"
+echo "Please update the .env on root file with your credentials for docker" 
+echo "also update the .env files inside projects of services folder with your credentials"
+echo "and run the following command to start the services."
+echo " "
+echo "docker-compose up -d --build"
+echo " "
+echo "****** END IMPORTANT *******"
+echo "************************"
+read -p "Press enter to continue..."
+
+# combine action_results and results
+results=("${action_results[@]}" "${results[@]}")
+
+# Step 6: Print results
 print_results "${results[@]}"
