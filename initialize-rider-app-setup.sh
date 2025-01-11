@@ -310,7 +310,7 @@ for repo in "${SERVICES_REPOS[@]}"; do
     #   npm_result="${RED}Failed${NC}"
     # fi
     npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
-    if cp env/.env.template env/.env.development; then
+    if cp .env.template .env.development; then
       env_result="${GREEN}Success${NC}"
     else
       env_result="${RED}Failed${NC}"
