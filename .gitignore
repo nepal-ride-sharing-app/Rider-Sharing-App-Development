@@ -5,6 +5,9 @@
 !.vscode/
 !.vscode/*
 
+# except docker compose files
+!docker-compose.yml
+
 # Except .sh files
 !*.sh
 

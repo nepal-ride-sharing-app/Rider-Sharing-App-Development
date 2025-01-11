@@ -1,0 +1,250 @@
+version: "3.8"
+
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "${LOCALSTACK_PORT}:4566" # Main LocalStack Gateway
+      - "${LOCALSTACK_LAMBDA_PORT}:4571" # Lambda service
+    environment:
+      - SERVICES=lambda,apigateway,s3,dynamodb # Enable required AWS services
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - "./localstack-data:/var/lib/localstack" # Persist LocalStack data locally
+    networks:
+      - app-network
+
+  driver-service:
+    build:
+      context: ./services/driver-service
+      target: ${TARGET_ENV:-development}
+    container_name: driver-service
+    ports:
+      - "${DRIVER_SERVICE_PORT}:3000"
+    environment:
+      - NODE_ENV=${TARGET_ENV:-development}
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9093
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./services/driver-service:/app # Mount service code for live changes
+      - /app/node_modules # Ensure node_modules are managed in container
+      - ./.serverless:/app/.serverless # Mount local Serverless credentials
+    working_dir: /app
+    depends_on:
+      - mysql
+      - redis
+      - redpanda
+      - mongo
+      - localstack
+    networks:
+      - app-network
+
+  rider-service:
+    build:
+      context: ./services/rider-service
+      target: ${TARGET_ENV:-development}
+    container_name: rider-service
+    ports:
+      - "${RIDER_SERVICE_PORT}:3000"
+    environment:
+      - NODE_ENV=${TARGET_ENV:-development}
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9093
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./services/rider-service:/app # Mount service code for live changes
+      - /app/node_modules # Ensure node_modules are managed in container
+      - ./.serverless:/app/.serverless # Mount local Serverless credentials
+    working_dir: /app
+    depends_on:
+      - mysql
+      - redis
+      - redpanda
+      - mongo
+      - localstack
+    networks:
+      - app-network
+
+  matching-service:
+    build:
+      context: ./services/matching-service
+      target: ${TARGET_ENV:-development}
+    container_name: matching-service
+    ports:
+      - "${MATCHING_SERVICE_PORT}:3000"
+    environment:
+      - NODE_ENV=${TARGET_ENV:-development}
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9093
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./services/matching-service:/app # Mount service code for live changes
+      - /app/node_modules # Ensure node_modules are managed in container
+      - ./.serverless:/app/.serverless # Mount local Serverless credentials
+    working_dir: /app
+    depends_on:
+      - mysql
+      - redis
+      - redpanda
+      - mongo
+      - localstack
+    networks:
+      - app-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      target: ${TARGET_ENV:-development}
+    container_name: notification-service
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT}:3000"
+    environment:
+      - NODE_ENV=${TARGET_ENV:-development}
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9093
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./services/notification-service:/app # Mount service code for live changes
+      - /app/node_modules # Ensure node_modules are managed in container
+      - ./.serverless:/app/.serverless # Mount local Serverless credentials
+    working_dir: /app
+    depends_on:
+      - mysql
+      - redis
+      - redpanda
+      - mongo
+      - localstack
+    networks:
+      - app-network
+
+  google-maps-service:
+    build:
+      context: ./services/google-maps-service
+      target: ${TARGET_ENV:-development}
+    container_name: google-maps-service
+    ports:
+      - "${GOOGLE_MAPS_SERVICE_PORT}:3000"
+    environment:
+      - NODE_ENV=${TARGET_ENV:-development}
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=9093
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - AWS_DEFAULT_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./services/google-maps-service:/app # Mount service code for live changes
+      - /app/node_modules # Ensure node_modules are managed in container
+      - ./.serverless:/app/.serverless # Mount local Serverless credentials
+    working_dir: /app
+    depends_on:
+      - mysql
+      - redis
+      - redpanda
+      - mongo
+      - localstack
+    networks:
+      - app-network
+
+  redpanda:
+    image: vectorized/redpanda:latest
+    ports:
+      - "${KAFKA_EXPOSED_PORT}:9092"
+    environment:
+      - REDPANDA_AUTO_CREATE_TOPICS=true
+      - REDPANDA_DEVELOPER_MODE=true
+      # - KAFKA_LISTENER_SECURITY_PROTOCOL=PLAINTEXT
+      # - KAFKA_BROKER=PLAINTEXT://redpanda:9092
+      # - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      # - KAFKA_LISTENER_NAMES=PLAINTEXT
+      # - KAFKA_LISTENER_PORT=9092
+    command:
+      - redpanda start
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    volumes:
+      - ./data/redpanda:/var/lib/redpanda/data # Persist Redpanda data
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "${MONGO_EXPOSED_PORT}:27017" # Expose MongoDB port
+    volumes:
+      - ./data/mongo:/data/db # Persist MongoDB data
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./data/mysql:/var/lib/mysql # Persist MySQL data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "${REDIS_EXPOSED_PORT}:6379"
+    volumes:
+      - ./data/redis:/data # Persist Redis data
+
+networks:
+  app-network:
+    driver: bridge
