@@ -212,8 +212,8 @@ services:
       # - KAFKA_LISTENER_PORT=9092
     command:
       - redpanda start
-      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
-      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:${KAFKA_EXPOSED_PORT}
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:${KAFKA_EXPOSED_PORT}
     volumes:
       - ./data/redpanda:/var/lib/redpanda/data # Persist Redpanda data
     networks:

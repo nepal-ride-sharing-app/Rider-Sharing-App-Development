@@ -69,6 +69,20 @@ handle_cloning() {
   done
 }
 
+# Function to copy certs folder to service directories
+copy_certs_folder() {
+  for service in "${SERVICES_REPOS[@]}"; do
+    if [ -d "./services/$service" ]; then
+      cp -r ./certs "./services/$service/certs"
+      echo "Copied certs folder to ./services/$service"
+      action_results+=("Copy certs to $service|action status->${GREEN}Success${NC}|NA|NA")
+    else
+      echo "Service directory ./services/$service does not exist."
+      action_results+=("Copy certs to $service|action status->${RED}Failed${NC}|NA|NA")
+    fi
+  done
+}
+
 # Function to copy .serverless folder to service directories
 copy_serverless_folder() {
   for service in "${SERVICES_REPOS[@]}"; do
@@ -332,6 +346,11 @@ copy_serverless_folder
 cp .env.template .env
 action_results+=("Copy .env.template to .env|Env Copy Res->${GREEN}Success${NC}|NA|NA")
 
+# run the generate-certs-for-kafka.sh script
+./generate-certs-for-kafka.sh
+
+# copy the certs folder to services
+copy_certs_folder
 
 # ask user to update the .env file with their credentials and run docker-compose up -d --build command
 echo "Setup completed successfully."
