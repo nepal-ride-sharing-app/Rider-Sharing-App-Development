@@ -5,7 +5,7 @@
 # Variables
 GITHUB_HOST="github.com"
 GITHUB_USERNAME="subash1999"
-MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
+MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider", "ride-sharing-app-common")
 SERVICES_REPOS=("driver-service" "rider-service" "google-maps-service" "matching-service" "notification-service")
 
 NODE_MAJOR_VERSION_REQUIRED=18
