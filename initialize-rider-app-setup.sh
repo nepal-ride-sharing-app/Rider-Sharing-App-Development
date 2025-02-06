@@ -101,6 +101,32 @@ copy_serverless_folder() {
   done
 }
 
+# serve_services_in_new_terminal:
+# This function iterates over each service listed in the SERVICES_REPOS array.
+# For each service, it:
+#   - Constructs the path to the service directory (./services/<service>).
+#   - Checks if the directory exists and contains a package.json file.
+#   - If valid, uses AppleScript (osascript) to open a new Terminal window, change the directory
+#     to the service's folder, and execute "npm run serve" to launch the service.
+#   - If the directory or package.json is missing, it outputs a message indicating the service is skipped.
+serve_services_in_new_terminal() {
+  echo "Launching 'npm run serve' in new Terminal windows for selected services..."
+  for service in "${SERVICES_REPOS[@]}"; do
+    service_dir="./services/${service}"
+    if [ -d "$service_dir" ] && [ -f "$service_dir/package.json" ]; then
+      echo "Launching service: ${service}..."
+      osascript <<EOF
+tell application "Terminal"
+    do script "cd $(pwd)/${service_dir} && npm run serve"
+    activate
+end tell
+EOF
+    else
+      echo "Skipping ${service}: Directory or package.json not found."
+    fi
+  done
+}
+
 # Function to print results
 print_results() {
   local results=("$@")
@@ -350,6 +376,7 @@ for repo in "${MOBILE_APP_REPOS[@]}"; do
   if [ -d "${repo}" ]; then
     cd ${repo}
     # uncomment the following lines if npm install is required
+    npm_link_packages
     npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
     if npm install; then
       npm_result="${GREEN}Success${NC}"
@@ -404,6 +431,7 @@ for repo in "${SERVICES_REPOS[@]}"; do
 
   if [ -d "${repo}" ]; then
     cd ${repo}
+    npm_link_packages
     npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
     if npm install; then
       npm_result="${GREEN}Success${NC}"
@@ -450,7 +478,17 @@ echo "docker-compose up -d --build"
 echo " "
 echo "****** END IMPORTANT *******"
 echo "************************"
-read -p "Press enter to continue..."
+
+# Ask if the user wants to run all services and Docker apps
+read -p "Do you want to run all the services and Docker apps now? [y/N]: " run_docker
+if [[ "$run_docker" =~ ^[Yy]$ ]]; then
+  echo "Starting Docker services..."
+  docker-compose up -d --build
+  # Launch services in new Terminal windows
+  serve_services_in_new_terminal
+else
+  echo "Docker services not started. You can run 'docker-compose up -d --build' later."
+fi
 
 # combine action_results and results
 results=("${action_results[@]}" "${results[@]}")
