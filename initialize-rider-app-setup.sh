@@ -6,7 +6,7 @@
 GITHUB_HOST="github.com"
 GITHUB_USERNAME="subash1999"
 MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
-LIBRARY_REPOS=("ride-sharing-app-common")
+LIBRARIES_REPOS=("ride-sharing-app-common")
 SERVICES_REPOS=("driver-service" "rider-service" "google-maps-service" "matching-service" "notification-service")
 
 NODE_MAJOR_VERSION_REQUIRED=18
@@ -20,6 +20,9 @@ NC=$(tput sgr0) # No Color
 results=()
 action_results=()
 results+=("     |     |     |     ")
+
+#initialize the array to store package name for npm link
+NPM_LINK_PACKAGE_NAMES=()
 
 # Function to clone a repository
 clone_repo() {
@@ -283,6 +286,67 @@ for repo in "${MOBILE_APP_REPOS[@]}"; do
   results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
 done
 
+# step 4: clone the library repositories
+# make library folder
+mkdir -p libraries
+
+cd libraries
+
+for repo in "${LIBRARIES_REPOS[@]}"; do
+  clone_result="${RED}Failed${NC}"
+  env_result="${RED}Not attempted${NC}"
+  npm_result="${RED}Not attempted${NC}"
+
+  echo "Cloning repository: ${repo}"
+  if clone_repo ${repo}; then
+    clone_result="${GREEN}Success${NC}"
+  else
+    echo "Failed to clone repository ${repo} without authentication."
+    while true; do
+      read -p "Enter your GitHub username: " GITHUB_USERNAME
+      read -sp "Enter your GitHub token: " GITHUB_TOKEN
+      echo
+      if clone_repo_with_auth ${repo} ${GITHUB_USERNAME} ${GITHUB_TOKEN}; then
+        clone_result="${GREEN}Success${NC}"
+        break
+      else
+        echo "Failed to clone repository ${repo} with authentication."
+        read -p "Do you want to skip this repository and move to another? (y/n): " choice
+        if [ "$choice" == "y" ]; then
+          break
+        else
+          echo "Retrying..."
+        fi
+      fi
+    done
+  fi
+
+  if [ -d "${repo}" ]; then
+    cd ${repo}
+    if npm install; then
+      npm_result="${GREEN}Success${NC}"
+      # Retrieve the package name from package.json (assumes it's quoted on the same line)
+      PACKAGE_NAME=$(grep '"name":' package.json | sed 's/.*"name": *"\([^"]*\)".*/\1/')
+
+      # Add the package name to the NPM_LINK_PACKAGE_NAMES array
+      NPM_LINK_PACKAGE_NAMES+=("$PACKAGE_NAME")
+    else
+      npm_result="${RED}Failed${NC}"
+    fi
+    # npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
+    if cp .env.template .env.development; then
+      env_result="${GREEN}Success${NC}"
+    else
+      env_result="${RED}Failed${NC}"
+    fi
+    cd ..
+  fi
+
+  results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
+done
+
+cd ..
+
 # Step 2: Create services folder
 mkdir -p services
 
@@ -319,12 +383,16 @@ for repo in "${SERVICES_REPOS[@]}"; do
 
   if [ -d "${repo}" ]; then
     cd ${repo}
-    # if npm install; then
-    #   npm_result="${GREEN}Success${NC}"
-    # else
-    #   npm_result="${RED}Failed${NC}"
-    # fi
-    npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
+    # loop through the NPM_LINK_PACKAGE_NAMES array and run npm link for each package
+    for package in "${NPM_LINK_PACKAGE_NAMES[@]}"; do
+      npm link $package
+    done
+    if npm install; then
+      npm_result="${GREEN}Success${NC}"
+    else
+      npm_result="${RED}Failed${NC}"
+    fi
+    # npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
     if cp .env.template .env.development; then
       env_result="${GREEN}Success${NC}"
     else
@@ -337,61 +405,6 @@ for repo in "${SERVICES_REPOS[@]}"; do
 done
 
 cd ..
-
-# step 4: clone the library repositories
-# make library folder
-mkdir -p libraries
-
-cd libraries
-
-for repo in "${SERVICES_REPOS[@]}"; do
-  clone_result="${RED}Failed${NC}"
-  env_result="${RED}Not attempted${NC}"
-  npm_result="${RED}Not attempted${NC}"
-
-  echo "Cloning repository: ${repo}"
-  if clone_repo ${repo}; then
-    clone_result="${GREEN}Success${NC}"
-  else
-    echo "Failed to clone repository ${repo} without authentication."
-    while true; do
-      read -p "Enter your GitHub username: " GITHUB_USERNAME
-      read -sp "Enter your GitHub token: " GITHUB_TOKEN
-      echo
-      if clone_repo_with_auth ${repo} ${GITHUB_USERNAME} ${GITHUB_TOKEN}; then
-        clone_result="${GREEN}Success${NC}"
-        break
-      else
-        echo "Failed to clone repository ${repo} with authentication."
-        read -p "Do you want to skip this repository and move to another? (y/n): " choice
-        if [ "$choice" == "y" ]; then
-          break
-        else
-          echo "Retrying..."
-        fi
-      fi
-    done
-  fi
-
-    if [ -d "${repo}" ]; then
-    cd ${repo}
-    # uncomment the following lines if npm install is required
-    npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
-    if npm install; then
-      npm_result="${GREEN}Success${NC}"
-    else
-      npm_result="${RED}Failed${NC}"
-    fi
-    if cp .env.template .env.development; then
-      env_result="${GREEN}Success${NC}"
-    else
-      env_result="${RED}Failed${NC}"
-    fi
-    cd ..
-  fi
-
-  results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
-done
 
 #step 5: copy .serverless folder to service directories
 copy_serverless_folder
