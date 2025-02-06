@@ -1,6 +1,7 @@
 # Rider App Setup
 
 This document provides instructions for setting up the Rider App development environment using the provided `initialize-rider-app-setup.sh` script.
+Make sure that you give enough permission to run the script using `chmod +x initialize-rider-app-setup.sh`
 
 ## Prerequisites
 
@@ -22,7 +23,7 @@ The `initialize-rider-app-setup.sh` script performs the following steps:
 4. **Copy .serverless Folder**: Copies the `.serverless` folder to the service directories.
 5. **Prepare Docker Environment**: Copies `.env.template` to `.env` for Docker Compose.
 6. **Prompt for Environment Variables**: Asks the user to update the `.env` file with their credentials.
-7. **Run Docker Compose**: Provides the command to start the services using Docker Compose.
+7. **Run Docker Compose and Initialize Services**: Provides the command to start the services using Docker Compose as well as open terminal for services
 
 ## Environment Variables
 
