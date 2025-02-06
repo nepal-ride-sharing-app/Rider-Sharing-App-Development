@@ -485,6 +485,10 @@ action_results+=("Copy .env.template to .env|Env Copy Res->${GREEN}Success${NC}|
 # copy the certs folder to services
 copy_certs_folder
 
+
+# Step 6: Print results
+print_results "${results[@]}"
+
 # ask user to update the .env file with their credentials and run docker-compose up -d --build command
 echo "Setup completed successfully."
 echo "************************"
@@ -511,9 +515,3 @@ if [[ "$run_docker" =~ ^[Yy]$ ]]; then
 else
   echo "Docker services not started. You can run 'docker-compose up -d --build' later."
 fi
-
-# combine action_results and results
-results=("${action_results[@]}" "${results[@]}")
-
-# Step 6: Print results
-print_results "${results[@]}"
