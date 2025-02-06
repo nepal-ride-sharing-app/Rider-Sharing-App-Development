@@ -5,7 +5,8 @@
 # Variables
 GITHUB_HOST="github.com"
 GITHUB_USERNAME="subash1999"
-MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider", "ride-sharing-app-common")
+MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
+LIBRARY_REPOS=("ride-sharing-app-common")
 SERVICES_REPOS=("driver-service" "rider-service" "google-maps-service" "matching-service" "notification-service")
 
 NODE_MAJOR_VERSION_REQUIRED=18
@@ -335,13 +336,67 @@ for repo in "${SERVICES_REPOS[@]}"; do
   results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
 done
 
-
 cd ..
 
-#step 4: copy .serverless folder to service directories
+# step 4: clone the library repositories
+# make library folder
+mkdir -p libraries
+
+cd libraries
+
+for repo in "${SERVICES_REPOS[@]}"; do
+  clone_result="${RED}Failed${NC}"
+  env_result="${RED}Not attempted${NC}"
+  npm_result="${RED}Not attempted${NC}"
+
+  echo "Cloning repository: ${repo}"
+  if clone_repo ${repo}; then
+    clone_result="${GREEN}Success${NC}"
+  else
+    echo "Failed to clone repository ${repo} without authentication."
+    while true; do
+      read -p "Enter your GitHub username: " GITHUB_USERNAME
+      read -sp "Enter your GitHub token: " GITHUB_TOKEN
+      echo
+      if clone_repo_with_auth ${repo} ${GITHUB_USERNAME} ${GITHUB_TOKEN}; then
+        clone_result="${GREEN}Success${NC}"
+        break
+      else
+        echo "Failed to clone repository ${repo} with authentication."
+        read -p "Do you want to skip this repository and move to another? (y/n): " choice
+        if [ "$choice" == "y" ]; then
+          break
+        else
+          echo "Retrying..."
+        fi
+      fi
+    done
+  fi
+
+    if [ -d "${repo}" ]; then
+    cd ${repo}
+    # uncomment the following lines if npm install is required
+    npm_result="${RED}npm install Not attempted (managed on Dockerfile or Docker Compose)${NC}"
+    if npm install; then
+      npm_result="${GREEN}Success${NC}"
+    else
+      npm_result="${RED}Failed${NC}"
+    fi
+    if cp .env.template .env.development; then
+      env_result="${GREEN}Success${NC}"
+    else
+      env_result="${RED}Failed${NC}"
+    fi
+    cd ..
+  fi
+
+  results+=("${repo}|Clone Res->${clone_result}|Env Copy Res->${env_result}|NPM install res->${npm_result}")
+done
+
+#step 5: copy .serverless folder to service directories
 copy_serverless_folder
 
-# Step 5: Run docker compose in the current script location
+# Step 6: Run docker compose in the current script location
 # copy .env.template to .env for docker-compose
 cp .env.template .env
 action_results+=("Copy .env.template to .env|Env Copy Res->${GREEN}Success${NC}|NA|NA")
