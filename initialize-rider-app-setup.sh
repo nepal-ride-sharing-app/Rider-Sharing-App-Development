@@ -4,7 +4,7 @@
 
 # Variables
 GITHUB_HOST="github.com"
-GITHUB_USERNAME="subash1999"
+GITHUB_USERNAME="nepal-ride-sharing-app"
 MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
 LIBRARIES_REPOS=("ride-sharing-app-common")
 SERVICES_REPOS=("driver-service" )
