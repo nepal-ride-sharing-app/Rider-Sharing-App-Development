@@ -117,7 +117,7 @@ serve_services_in_new_terminal() {
       echo "Launching service: ${service}..."
       osascript <<EOF
 tell application "Terminal"
-    do script "cd $(pwd)/${service_dir} && npm run serve"
+    do script "cd \"$(pwd)/${service_dir}\" && npm run serve"
     activate
 end tell
 EOF
@@ -125,6 +125,25 @@ EOF
       echo "Skipping ${service}: Directory or package.json not found."
     fi
   done
+}
+
+serve_libraries_in_new_terminal() {
+  echo "Launching 'npm run dev' in new Terminal windows for library repositories..."
+  cd libraries || { echo "libraries folder not found"; return 1; }
+  for library in "${LIBRARIES_REPOS[@]}"; do
+    if [ -d "${library}" ] && [ -f "${library}/package.json" ]; then
+      echo "Launching library: ${library}..."
+      osascript <<EOF
+tell application "Terminal"
+    do script "cd \"$(pwd)/${library}\" && npm run dev"
+    activate
+end tell
+EOF
+    else
+      echo "Skipping ${library}: Directory or package.json not found."
+    fi
+  done
+  cd ..
 }
 
 # Function to print results
@@ -473,17 +492,20 @@ echo "****** IMPORTANT *******"
 echo "Please update the .env on root file with your credentials for docker" 
 echo "also update the .env files inside projects of services folder with your credentials"
 echo "and run the following command to start the services."
-echo " "
-echo "docker-compose up -d --build"
-echo " "
+echo "Please proceed with y/Y to run the services and libraries in new terminal windows."
+echo "Otherwise, you can run 'docker-compose up -d --build' and "npm run serve" for services and "npm run dev" for libraries later."
 echo "****** END IMPORTANT *******"
 echo "************************"
+
 
 # Ask if the user wants to run all services and Docker apps
 read -p "Do you want to run all the services and Docker apps now? [y/N]: " run_docker
 if [[ "$run_docker" =~ ^[Yy]$ ]]; then
   echo "Starting Docker services..."
   docker-compose up -d --build
+  # serve libraries in new Terminal windows
+  serve_libraries_in_new_terminal
+
   # Launch services in new Terminal windows
   serve_services_in_new_terminal
 else
