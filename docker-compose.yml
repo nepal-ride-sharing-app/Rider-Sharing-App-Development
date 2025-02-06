@@ -26,7 +26,7 @@ services:
   #     - KAFKA_BROKER=${KAFKA_BROKER}
   #   volumes:
   #     - ./services/driver-service:/app/ # Mount service code for live changes
-  #     - ./libs/:/app/node_modules/@subash1999/ # Mount local library for live changes
+  #     - ./libs/:/app/node_modules/@nepal-ride-sharing-app/ # Mount local library for live changes
   #     - /app/node_modules # Ensure node_modules are managed in container
   #     - ./.serverless:/app/.serverless # Mount local Serverless credentials
   #   working_dir: /app
