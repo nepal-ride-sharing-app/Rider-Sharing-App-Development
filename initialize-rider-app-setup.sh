@@ -480,7 +480,7 @@ cp .env.template .env
 action_results+=("Copy .env.template to .env|Env Copy Res->${GREEN}Success${NC}|NA|NA")
 
 # run the generate-certs-for-kafka.sh script
-./generate-certs-for-kafka.sh
+# ./generate-certs-for-kafka.sh
 
 # copy the certs folder to services
 copy_certs_folder
@@ -500,10 +500,22 @@ echo "Please proceed with y/Y to run the services and libraries in new terminal 
 echo "Otherwise, you can run 'docker-compose up -d --build' and "npm run serve" for services and "npm run dev" for libraries later."
 echo "****** END IMPORTANT *******"
 echo "************************"
+echo ""
+echo ""
 
 
 # Ask if the user wants to run all services and Docker apps
-read -p "Do you want to run all the services and Docker apps now? [y/N]: " run_docker
+while true; do
+  read -p "Do you want to run all the services and Docker apps now? [y/n]: " run_docker
+  case "$run_docker" in
+    [Yy]|[Nn])
+      break
+      ;;
+    *)
+      echo "Please enter 'y' or 'n'."
+      ;;
+  esac
+done
 if [[ "$run_docker" =~ ^[Yy]$ ]]; then
   echo "Starting Docker services..."
   docker-compose up -d --build
