@@ -1,20 +1,6 @@
 #!/bin/bash
-
-# filepath: /Users/Shared/CODING-SHARED/Ride Sharing App/Development/initialize-rider-app-setup.sh
-
-# Variables
-GITHUB_HOST="github.com"
-GITHUB_USERNAME="nepal-ride-sharing-app"
-MOBILE_APP_REPOS=("mobile-app-driver" "mobile-app-rider")
-LIBRARIES_REPOS=("common")
-SERVICES_REPOS=("driver-service" )
-
-NODE_MAJOR_VERSION_REQUIRED=18
-
-# Colors for output
-GREEN=$(tput setaf 2)
-RED=$(tput setaf 1)
-NC=$(tput sgr0) # No Color
+# Import environment variables from env.sh
+source "$(dirname "$0")/env.sh"
 
 # Initialize results array
 results=()
@@ -99,51 +85,6 @@ copy_serverless_folder() {
       action_results+=("Copy .serverless to $service|action status->${RED}Failed${NC}|NA|NA")
     fi
   done
-}
-
-# serve_services_in_new_terminal:
-# This function iterates over each service listed in the SERVICES_REPOS array.
-# For each service, it:
-#   - Constructs the path to the service directory (./services/<service>).
-#   - Checks if the directory exists and contains a package.json file.
-#   - If valid, uses AppleScript (osascript) to open a new Terminal window, change the directory
-#     to the service's folder, and execute "npm run serve" to launch the service.
-#   - If the directory or package.json is missing, it outputs a message indicating the service is skipped.
-serve_services_in_new_terminal() {
-  echo "Launching 'npm run serve' in new Terminal windows for selected services..."
-  for service in "${SERVICES_REPOS[@]}"; do
-    service_dir="./services/${service}"
-    if [ -d "$service_dir" ] && [ -f "$service_dir/package.json" ]; then
-      echo "Launching service: ${service}..."
-      osascript <<EOF
-tell application "Terminal"
-    do script "cd \"$(pwd)/${service_dir}\" && npm run serve"
-    activate
-end tell
-EOF
-    else
-      echo "Skipping ${service}: Directory or package.json not found."
-    fi
-  done
-}
-
-serve_libraries_in_new_terminal() {
-  echo "Launching 'npm run dev' in new Terminal windows for library repositories..."
-  cd libraries || { echo "libraries folder not found"; return 1; }
-  for library in "${LIBRARIES_REPOS[@]}"; do
-    if [ -d "${library}" ] && [ -f "${library}/package.json" ]; then
-      echo "Launching library: ${library}..."
-      osascript <<EOF
-tell application "Terminal"
-    do script "cd \"$(pwd)/${library}\" && npm run dev"
-    activate
-end tell
-EOF
-    else
-      echo "Skipping ${library}: Directory or package.json not found."
-    fi
-  done
-  cd ..
 }
 
 # Function to print results
@@ -517,13 +458,8 @@ while true; do
   esac
 done
 if [[ "$run_docker" =~ ^[Yy]$ ]]; then
-  echo "Starting Docker services..."
-  docker-compose up -d --build
-  # serve libraries in new Terminal windows
-  serve_libraries_in_new_terminal
-
-  # Launch services in new Terminal windows
-  serve_services_in_new_terminal
+  chmod +x start-all-docker-library-and-services.sh
+  ./start-all-docker-library-and-services.sh
 else
   echo "Docker services not started. You can run 'docker-compose up -d --build' later."
 fi
